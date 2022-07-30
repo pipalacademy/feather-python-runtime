@@ -14,3 +14,7 @@ For running Python code
 For running tests
 
 ... TODO: Add request/response formats
+
+## License
+
+Licensed under MIT License. See [License](/LICENSE) for details.
