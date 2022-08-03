@@ -26,7 +26,7 @@ def run():
     runtime = PythonRuntime(
         python_path=PYTHON_EXECUTABLE_PATH,
         base_tempdir_path=BASE_TEMPDIR_PATH,
-        entrypoint=DEFAULT_ENTRYPOINT,
+        default_entrypoint=DEFAULT_ENTRYPOINT,
         timeout=SUBPROCESS_TIMEOUT,
     )
 

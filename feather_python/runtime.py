@@ -7,16 +7,21 @@ from feather_python.models import RunRequestMode, RunResponse
 
 
 class PythonRuntime:
-    def __init__(self, python_path, base_tempdir_path, entrypoint, timeout):
+    def __init__(
+        self, python_path, base_tempdir_path, default_entrypoint, timeout
+    ):
         self.python_path = python_path
         self.base_tempdir_path = base_tempdir_path
-        self.entrypoint = entrypoint
+        self.default_entrypoint = default_entrypoint
         self.timeout = timeout
 
     def run(self, run_request: "RunRequest") -> RunResponse:
-        with self.setup_fs(run_request) as tempdir:
+        entrypoint = run_request.entrypoint or self.default_entrypoint
+        with self.setup_fs(run_request, entrypoint=entrypoint) as tempdir:
             command = self.get_command(
-                tempdir=tempdir, args=run_request.args or []
+                tempdir=tempdir,
+                entrypoint=run_request.entrypoint or self.default_entrypoint,
+                args=run_request.args or [],
             )
             proc = subprocess.run(
                 command,
@@ -35,7 +40,7 @@ class PythonRuntime:
         pass
 
     @contextlib.contextmanager
-    def setup_fs(self, run_request: "RunRequest"):
+    def setup_fs(self, run_request: "RunRequest", entrypoint: str):
         with tempfile.TemporaryDirectory(
             dir=self.base_tempdir_path
         ) as tempdir:
@@ -44,13 +49,13 @@ class PythonRuntime:
                     final_filepath = os.path.join(tempdir, filepath)
                     file.save(final_filepath)
             else:
-                filepath = os.path.join(tempdir, self.entrypoint)
+                filepath = os.path.join(tempdir, entrypoint)
                 with open(filepath, "w") as f:
                     f.write(run_request.code)
 
             yield tempdir
 
-    def get_command(self, tempdir, args=None):
-        executable_file = os.path.join(tempdir, self.entrypoint)
-        command = [self.python_path, executable_file] + (args or [])
+    def get_command(self, tempdir, entrypoint, args=None):
+        entrypoint_path = os.path.join(tempdir, entrypoint)
+        command = [self.python_path, entrypoint_path] + (args or [])
         return command

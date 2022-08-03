@@ -13,6 +13,7 @@ class RunRequestMode(Enum):
 class RunRequest:
     ARGS_HEADER = "x-feather-args"
     ENV_HEADER = "x-feather-env"
+    ENTRYPOINT_HEADER = "x-feather-entrypoint"
 
     def __init__(
         self,
@@ -65,7 +66,13 @@ class RunRequest:
                 request.headers[RunRequest.ENV_HEADER]
             )
 
-        return cls(code=code, files=files, args=args, env=env)
+        entrypoint = None
+        if RunRequest.ENTRYPOINT_HEADER in request.headers:
+            entrypoint = request.headers[RunRequest.ENTRYPOINT_HEADER]
+
+        return cls(
+            code=code, files=files, args=args, env=env, entrypoint=entrypoint
+        )
 
     @classmethod
     def get_args_from_header(cls, header_value: str) -> List[str]:
