@@ -94,7 +94,7 @@ def test_run_with_code_that_errors(client):
 
 
 def test_run_with_code_with_args(client):
-    fake_data = get_fake_data_with_code_that_errors()
+    fake_data = get_fake_data_with_code_with_args()
     code, args, expected_output = fake_data
 
     response = client.post(
@@ -178,6 +178,6 @@ def get_fake_data_with_code_with_args():
     """
     )
     args = "Hi World!"
-    expected_output = '"["Hi", "World!"]"\n'
+    expected_output = '["Hi", "World!"]\n'
 
     return FakeCodeDataWithArgs(code, args, expected_output)
