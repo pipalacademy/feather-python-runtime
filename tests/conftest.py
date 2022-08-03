@@ -14,4 +14,4 @@ def client(app):
 
 
 def get_run_endpoint():
-    return "/runtime/python"
+    return "/runtimes/python"

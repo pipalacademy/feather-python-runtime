@@ -14,7 +14,7 @@ SUBPROCESS_TIMEOUT = 30  # seconds
 app = Flask("feather_python")
 
 
-@app.route("/runtime/python", methods=["GET", "POST"])
+@app.route("/runtimes/python", methods=["GET", "POST"])
 def run():
     """
     Response behavior:
