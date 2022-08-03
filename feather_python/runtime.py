@@ -19,7 +19,10 @@ class PythonRuntime:
                 tempdir=tempdir, args=run_request.args or []
             )
             proc = subprocess.run(
-                command, capture_output=True, timeout=self.timeout
+                command,
+                capture_output=True,
+                timeout=self.timeout,
+                env=run_request.env,
             )
 
         return RunResponse(

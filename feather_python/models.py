@@ -1,6 +1,6 @@
 from enum import Enum
 from io import BytesIO
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from werkzeug.datastructures import FileStorage
 
@@ -12,6 +12,7 @@ class RunRequestMode(Enum):
 
 class RunRequest:
     ARGS_HEADER = "x-feather-args"
+    ENV_HEADER = "x-feather-env"
 
     def __init__(
         self,
@@ -19,11 +20,13 @@ class RunRequest:
         files: Optional[Dict[str, FileStorage]] = None,
         entrypoint: Optional[str] = None,
         args: Optional[List[str]] = None,
+        env: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.code = code
         self.files = files
         self.entrypoint = entrypoint
         self.args = args
+        self.env = env
 
     @property
     def mode(self) -> Enum:
@@ -50,17 +53,29 @@ class RunRequest:
             # TODO: raise custom exception
             raise Exception("unsupported method")
 
-        args = None
+        args = []
         if RunRequest.ARGS_HEADER in request.headers:
             args = cls.get_args_from_header(
                 request.headers[RunRequest.ARGS_HEADER]
             )
 
-        return cls(code=code, files=files, args=args)
+        env = {}
+        if RunRequest.ENV_HEADER in request.headers:
+            env = cls.get_env_from_header(
+                request.headers[RunRequest.ENV_HEADER]
+            )
+
+        return cls(code=code, files=files, args=args, env=env)
 
     @classmethod
     def get_args_from_header(cls, header_value: str) -> List[str]:
         return header_value.split(" ")
+
+    @classmethod
+    def get_env_from_header(cls, header_value: str) -> Dict[str, str]:
+        return dict(
+            assignment.split("=") for assignment in header_value.split(" ")
+        )
 
 
 class RunResponse:
