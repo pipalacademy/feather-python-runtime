@@ -22,11 +22,7 @@ def run():
 
         executable_file = os.path.join(tempdir, DEFAULT_ENTRYPOINT)
         command = [PYTHON_EXECUTABLE_PATH, executable_file]
-        proc = subprocess.run(
-            command,
-            capture_output=True,
-            timeout=SUBPROCESS_TIMEOUT
-        )
+        proc = subprocess.run(command, capture_output=True, timeout=SUBPROCESS_TIMEOUT)
         output = proc.stdout if proc.stdout else proc.stderr
 
     return output
