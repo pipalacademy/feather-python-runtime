@@ -11,7 +11,7 @@ DEFAULT_ENTRYPOINT = "main.py"
 PYTHON_EXECUTABLE_PATH = "python3"
 SUBPROCESS_TIMEOUT = 30  # seconds
 
-app = Flask("feather-runtime-python")
+app = Flask("feather_python")
 
 
 @app.route("/runtime/python", methods=["GET", "POST"])
