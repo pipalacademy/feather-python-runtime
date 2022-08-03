@@ -15,7 +15,9 @@ class PythonRuntime:
 
     def run(self, run_request: "RunRequest") -> RunResponse:
         with self.setup_fs(run_request) as tempdir:
-            command = self.get_command(tempdir=tempdir)
+            command = self.get_command(
+                tempdir=tempdir, args=run_request.args or []
+            )
             proc = subprocess.run(
                 command, capture_output=True, timeout=self.timeout
             )
@@ -45,7 +47,7 @@ class PythonRuntime:
 
             yield tempdir
 
-    def get_command(self, tempdir):
+    def get_command(self, tempdir, args=None):
         executable_file = os.path.join(tempdir, self.entrypoint)
-        command = [self.python_path, executable_file]
+        command = [self.python_path, executable_file] + (args or [])
         return command

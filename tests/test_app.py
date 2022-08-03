@@ -16,6 +16,9 @@ FakeCodeData = namedtuple("FakeCodeData", ["code", "expected_output"])
 FakeCodeWithErrorData = namedtuple(
     "FakeCodeWithErrorData", ["code", "expected_in_output"]
 )
+FakeCodeDataWithArgs = namedtuple(
+    "FakeCodeDataWithArgs", ["code", "args", "expected_output"]
+)
 
 
 def test_run_with_code_without_headers(client):
@@ -90,6 +93,18 @@ def test_run_with_code_that_errors(client):
     assert expected_in_output in response.text
 
 
+def test_run_with_code_with_args(client):
+    fake_data = get_fake_data_with_code_that_errors()
+    code, args, expected_output = fake_data
+
+    response = client.post(
+        endpoint, headers={"x-feather-args": args}, data=code
+    )
+
+    assert response.status_code == 200
+    assert response.text == expected_output
+
+
 def get_fake_data_with_multiple_files():
     files = {
         "code.py": textwrap.dedent(
@@ -151,3 +166,18 @@ def get_fake_data_with_multiple_files_that_errors():
     return FakeMultipleFilesWithErrorData(
         files=files, expected_in_output=expected_in_output
     )
+
+
+def get_fake_data_with_code_with_args():
+    code = textwrap.dedent(
+        """
+    import json
+    import sys
+
+    print(json.dumps(sys.argv[1:]))
+    """
+    )
+    args = "Hi World!"
+    expected_output = '"["Hi", "World!"]"\n'
+
+    return FakeCodeDataWithArgs(code, args, expected_output)

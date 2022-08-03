@@ -1,6 +1,6 @@
 from enum import Enum
 from io import BytesIO
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from werkzeug.datastructures import FileStorage
 
@@ -11,15 +11,19 @@ class RunRequestMode(Enum):
 
 
 class RunRequest:
+    ARGS_HEADER = "x-feather-args"
+
     def __init__(
         self,
         code: Optional[str] = None,
         files: Optional[Dict[str, FileStorage]] = None,
         entrypoint: Optional[str] = None,
+        args: Optional[List[str]] = None,
     ) -> None:
         self.code = code
         self.files = files
         self.entrypoint = entrypoint
+        self.args = args
 
     @property
     def mode(self) -> Enum:
@@ -46,7 +50,17 @@ class RunRequest:
             # TODO: raise custom exception
             raise Exception("unsupported method")
 
-        return cls(code=code, files=files)
+        args = None
+        if RunRequest.ARGS_HEADER in request.headers:
+            args = cls.get_args_from_header(
+                request.headers[RunRequest.ARGS_HEADER]
+            )
+
+        return cls(code=code, files=files, args=args)
+
+    @classmethod
+    def get_args_from_header(cls, header_value: str) -> List[str]:
+        return header_value.split(" ")
 
 
 class RunResponse:
