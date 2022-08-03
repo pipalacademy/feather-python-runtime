@@ -112,4 +112,4 @@ def test_get_runrequest_from_flask_request_with_code(app):
 
         assert run_request.files is None
         assert run_request.mode == RunRequestMode.CODE
-        assert run_request.code.decode("utf-8") == code
+        assert run_request.code == code

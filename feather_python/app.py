@@ -1,8 +1,9 @@
 import os
-import subprocess
-import tempfile
 
 from flask import Flask, request
+
+from feather_python.models import RunRequest
+from feather_python.runtime import PythonRuntime
 
 
 BASE_TEMPDIR_PATH = os.getenv("FEATHER_BASE_TEMPDIR_PATH", "/tmp/")
@@ -15,14 +16,24 @@ app = Flask("feather-runtime-python")
 
 @app.route("/runtime/python", methods=["GET", "POST"])
 def run():
-    with tempfile.TemporaryDirectory(dir=BASE_TEMPDIR_PATH) as tempdir:
-        for filepath, file in request.files.items():
-            final_filepath = os.path.join(tempdir, filepath)
-            file.save(final_filepath)
+    """
+    Response behavior:
+    stdout if exit code was 0 (OK), else the stderr output as
+    text/plain
+    """
 
-        executable_file = os.path.join(tempdir, DEFAULT_ENTRYPOINT)
-        command = [PYTHON_EXECUTABLE_PATH, executable_file]
-        proc = subprocess.run(command, capture_output=True, timeout=SUBPROCESS_TIMEOUT)
-        output = proc.stdout if proc.stdout else proc.stderr
+    run_request = RunRequest.from_request(request)
+    runtime = PythonRuntime(
+        python_path=PYTHON_EXECUTABLE_PATH,
+        base_tempdir_path=BASE_TEMPDIR_PATH,
+        entrypoint=DEFAULT_ENTRYPOINT,
+        timeout=SUBPROCESS_TIMEOUT,
+    )
 
-    return output
+    run_response = runtime.run(run_request)
+
+    return (
+        run_response.stdout
+        if run_response.status_code == 0
+        else run_response.stderr
+    )

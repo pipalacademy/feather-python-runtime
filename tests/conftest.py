@@ -5,4 +5,13 @@ from feather_python.app import app as feather_app
 
 @pytest.fixture()
 def app():
-    yield feather_app
+    return feather_app
+
+
+@pytest.fixture()
+def client(app):
+    return app.test_client()
+
+
+def get_run_endpoint():
+    return "/runtime/python"
