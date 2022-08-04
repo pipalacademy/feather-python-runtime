@@ -107,7 +107,9 @@ def test_get_runrequest_from_flask_request_with_json_and_multiple_files(app):
 def test_get_runrequest_from_flask_request_with_code(app):
     code = """print("Hello from inside a test, world!")"""
 
-    with app.test_request_context("/runtimes/python", method="GET", data=code):
+    with app.test_request_context(
+        "/runtimes/python", method="POST", data=code
+    ):
         run_request = RunRequest.from_request(request)
 
         assert run_request.files is None
