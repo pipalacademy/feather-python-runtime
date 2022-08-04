@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from werkzeug.datastructures import FileStorage
 
+from feather_python.errors import UnsupportedContentTypeError
+
 
 class RunRequestMode(Enum):
     CODE = "code"
@@ -46,13 +48,15 @@ class RunRequest:
                 filename: create_filestorage(filename, content)
                 for filename, content in raw_files.items()
             }
-        elif request.form:
+        elif request.mimetype == "application/x-www-form-urlencoded":
             code = next(iter(request.form.keys()))
-        elif request.data:
+        elif (
+            request.mimetype in {"text/plain", "text/python"}
+            or not request.mimetype
+        ):
             code = request.data.decode("utf-8")
         else:
-            # TODO: raise custom exception
-            raise Exception("unsupported method")
+            raise UnsupportedContentTypeError()
 
         args = []
         if RunRequest.ARGS_HEADER in request.headers:
