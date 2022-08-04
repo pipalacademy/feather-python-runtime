@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, request
 
+from feather_python.middleware import handle_feather_errors
 from feather_python.models import RunRequest
 from feather_python.runtime import PythonRuntime
 
@@ -15,6 +16,7 @@ app = Flask("feather_python")
 
 
 @app.route("/runtimes/python", methods=["GET", "POST"])
+@handle_feather_errors
 def run():
     """
     Response behavior:
