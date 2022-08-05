@@ -17,7 +17,7 @@ def test_unsupported_content_type(client):
     assert response.json["error"] == "Unsupported content type"
 
 
-def test_incorrect_json_error(client, run_endpoint):
+def test_incorrect_json_error(client):
     json_data = {"main.py": "this main.py should be under a 'files' key"}
 
     response = client.post(
@@ -28,7 +28,7 @@ def test_incorrect_json_error(client, run_endpoint):
     assert response.status_code == 400
     assert "error" in response.json
     assert "message" in response.json
-    assert response.json["error"] == "Invalid input"
+    assert response.json["error"] == "Incorrect JSON schema"
 
 
 def test_code_not_found_error_with_form_urlencoded(client):
@@ -37,7 +37,7 @@ def test_code_not_found_error_with_form_urlencoded(client):
     assert response.status_code == 400
     assert "error" in response.json
     assert "message" in response.json
-    assert response.json["error"] == "Invalid input"
+    assert response.json["error"] == "Code not found"
 
 
 def test_code_not_found_error_with_textplain(client):
@@ -48,19 +48,21 @@ def test_code_not_found_error_with_textplain(client):
     assert response.status_code == 400
     assert "error" in response.json
     assert "message" in response.json
-    assert response.json["error"] == "Invalid input"
+    assert response.json["error"] == "Code not found"
 
 
 def test_code_not_found_error_with_json(client):
     response = client.post(
         endpoint,
-        json={},
+        json={
+            "files": {},
+        },
     )
 
     assert response.status_code == 400
     assert "error" in response.json
     assert "message" in response.json
-    assert response.json["error"] == "Invalid input"
+    assert response.json["error"] == "Code not found"
 
 
 def test_code_not_found_error_with_multipart(client):
@@ -73,4 +75,4 @@ def test_code_not_found_error_with_multipart(client):
     assert response.status_code == 400
     assert "error" in response.json
     assert "message" in response.json
-    assert response.json["error"] == "Invalid input"
+    assert response.json["error"] == "Code not found"

@@ -5,14 +5,17 @@ class BaseFeatherError(Exception):
 
 
 class CodeNotFoundError(BaseFeatherError):
-    title = "Invalid input"
-    message = "Code not found"
+    title = "Code not found"
+    message = "Expected code in the request data but couldn't find it there."
     status_code = 400
 
 
 class IncorrectJSONError(BaseFeatherError):
-    title = "Invalid input"
-    message = "Incorrect schema for JSON. Please verify with documentation."
+    title = "Incorrect JSON schema"
+    message = (
+        "The JSON data submitted doesn't have required fields"
+        " (or the desired type). Please verify with documentation."
+    )
     status_code = 400
 
 
