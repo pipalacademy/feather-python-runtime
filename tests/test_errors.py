@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from tests.conftest import get_run_endpoint
 
 
@@ -76,3 +78,42 @@ def test_code_not_found_error_with_multipart(client):
     assert "error" in response.json
     assert "message" in response.json
     assert response.json["error"] == "Code not found"
+
+
+def test_entrypoint_not_found_with_explicit_entrypoint(client):
+    response = client.post(
+        endpoint,
+        headers={"x-feather-entrypoint": "does_not_exist.py"},
+        data={"main.py": (BytesIO(b"this is main.py"), "main.py")},
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.json
+    assert "message" in response.json
+    assert response.json["error"] == "Entrypoint not found"
+
+
+def test_entrypoint_not_found_with_default_entrypoint(client):
+    response = client.post(
+        endpoint,
+        data={"not_main.py": (BytesIO(b"this is not main.py"), "not_main.py")},
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.json
+    assert "message" in response.json
+    assert response.json["error"] == "Entrypoint not found"
+
+
+def test_entrypoint_not_found_with_default_entrypoint_and_filename_mismatch(
+    client,
+):
+    response = client.post(
+        endpoint,
+        data={"not_main.py": (BytesIO(b"this is not main.py"), "main.py")},
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.json
+    assert "message" in response.json
+    assert response.json["error"] == "Entrypoint not found"

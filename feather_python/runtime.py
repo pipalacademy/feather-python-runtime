@@ -3,6 +3,7 @@ import os
 import subprocess
 import tempfile
 
+from feather_python.errors import EntrypointNotFoundError
 from feather_python.models import RunRequestMode, RunResponse
 
 
@@ -17,6 +18,12 @@ class PythonRuntime:
 
     def run(self, run_request: "RunRequest") -> RunResponse:
         entrypoint = run_request.entrypoint or self.default_entrypoint
+        if (
+            run_request.mode == RunRequestMode.FILES
+            and entrypoint not in run_request.files
+        ):
+            raise EntrypointNotFoundError
+
         with self.setup_fs(run_request, entrypoint=entrypoint) as tempdir:
             command = self.get_command(
                 tempdir=tempdir,
