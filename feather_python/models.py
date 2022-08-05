@@ -75,7 +75,7 @@ class RunRequest:
 
     @classmethod
     def get_args_from_header(cls, header_value: str) -> List[str]:
-        return header_value.split(" ")
+        return header_value and header_value.split(" ") or []
 
     @classmethod
     def get_env_from_header(cls, header_value: str) -> Dict[str, str]:
