@@ -41,17 +41,17 @@ class RunRequest:
 
     @classmethod
     def from_request(cls, request: "flask.Request") -> "RunRequest":
-        file_getter = cls.get_files_getter(request.mimetype)
-        code_getter = cls.get_code_getter(request.mimetype)
+        file_getter = cls._get_files_getter(request.mimetype)
+        code_getter = cls._get_code_getter(request.mimetype)
         if not file_getter and code_getter:
             raise UnsupportedContentTypeError()
 
         files = file_getter and file_getter(request)
         code = code_getter and code_getter(request)
 
-        args = cls.get_args(request.headers.get(RunRequest.ARGS_HEADER, ""))
-        env = cls.get_env(request.headers.get(RunRequest.ENV_HEADER, ""))
-        entrypoint = cls.get_entrypoint(
+        args = cls._get_args(request.headers.get(RunRequest.ARGS_HEADER, ""))
+        env = cls._get_env(request.headers.get(RunRequest.ENV_HEADER, ""))
+        entrypoint = cls._get_entrypoint(
             request.headers.get(RunRequest.ENTRYPOINT_HEADER, "")
         )
 
@@ -60,46 +60,25 @@ class RunRequest:
         )
 
     @classmethod
-    def get_args(cls, header_value: str) -> List[str]:
-        return header_value and header_value.split(" ") or []
-
-    @classmethod
-    def get_env(cls, header_value: str) -> Dict[str, str]:
-        assignments = header_value and header_value.split(" ") or []
-
-        # env_list: [[key1, val1], [key2, val2], [key3, val3], ...]
-        env_list = [
-            assignment.split("=", maxsplit=1)
-            for assignment in assignments
-            if "=" in assignment
-        ]
-
-        return dict(env_list)
-
-    @classmethod
-    def get_entrypoint(cls, header_value: str) -> Union[str, None]:
-        return header_value or None
-
-    @classmethod
-    def get_files_getter(cls, mimetype: str):
+    def _get_files_getter(cls, mimetype: str):
         getters = {
-            "application/json": cls.get_files_from_json,
-            "multipart/form-data": cls.get_files_from_multipart,
+            "application/json": cls._get_files_from_json,
+            "multipart/form-data": cls._get_files_from_multipart,
         }
         return getters.get(mimetype)
 
     @classmethod
-    def get_code_getter(cls, mimetype: str):
+    def _get_code_getter(cls, mimetype: str):
         getters = {
-            "application/x-www-form-urlencoded": cls.get_code_from_formdata,
-            "text/plain": cls.get_code_from_plaintext,
-            "text/python": cls.get_code_from_plaintext,
-            "": cls.get_code_from_plaintext,
+            "application/x-www-form-urlencoded": cls._get_code_from_formdata,
+            "text/plain": cls._get_code_from_plaintext,
+            "text/python": cls._get_code_from_plaintext,
+            "": cls._get_code_from_plaintext,
         }
         return getters.get(mimetype)
 
     @staticmethod
-    def get_files_from_json(
+    def _get_files_from_json(
         request: "flask.Request",
     ) -> Dict[str, FileStorage]:
         if raw_files := request.json.get("files"):
@@ -116,7 +95,7 @@ class RunRequest:
         return files
 
     @staticmethod
-    def get_files_from_multipart(
+    def _get_files_from_multipart(
         request: "flask.Request",
     ) -> Dict[str, FileStorage]:
         files = dict(request.files)
@@ -126,19 +105,40 @@ class RunRequest:
         return files
 
     @staticmethod
-    def get_code_from_formdata(request: "flask.Request") -> str:
+    def _get_code_from_formdata(request: "flask.Request") -> str:
         try:
             return next(iter(request.form.keys()))
         except StopIteration:
             raise CodeNotFoundError()
 
     @staticmethod
-    def get_code_from_plaintext(request: "flask.Request") -> str:
+    def _get_code_from_plaintext(request: "flask.Request") -> str:
         code = request.data.decode("utf-8")
         if not code:
             raise CodeNotFoundError()
 
         return code
+
+    @staticmethod
+    def _get_args(header_value: str) -> List[str]:
+        return header_value and header_value.split(" ") or []
+
+    @staticmethod
+    def _get_env(header_value: str) -> Dict[str, str]:
+        assignments = header_value and header_value.split(" ") or []
+
+        # env_list: [[key1, val1], [key2, val2], [key3, val3], ...]
+        env_list = [
+            assignment.split("=", maxsplit=1)
+            for assignment in assignments
+            if "=" in assignment
+        ]
+
+        return dict(env_list)
+
+    @staticmethod
+    def _get_entrypoint(header_value: str) -> Union[str, None]:
+        return header_value or None
 
 
 class RunResponse:
