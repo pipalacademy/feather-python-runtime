@@ -43,7 +43,7 @@ class RunRequest:
     def from_request(cls, request: "flask.Request") -> "RunRequest":
         file_getter = cls._get_files_getter(request.mimetype)
         code_getter = cls._get_code_getter(request.mimetype)
-        if not file_getter and code_getter:
+        if not file_getter and not code_getter:
             raise UnsupportedContentTypeError()
 
         files = file_getter and file_getter(request)
