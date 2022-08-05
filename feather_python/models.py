@@ -79,9 +79,16 @@ class RunRequest:
 
     @classmethod
     def get_env_from_header(cls, header_value: str) -> Dict[str, str]:
-        return dict(
-            assignment.split("=") for assignment in header_value.split(" ")
-        )
+        assignments = header_value and header_value.split(" ") or []
+
+        # env_list: [[key1, val1], [key2, val2], [key3, val3], ...]
+        env_list = [
+            assignment.split("=", maxsplit=1)
+            for assignment in assignments
+            if "=" in assignment
+        ]
+
+        return dict(env_list)
 
     @classmethod
     def get_entrypoint_from_header(cls, header_value: str) -> Union[str, None]:
