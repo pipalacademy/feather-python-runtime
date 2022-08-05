@@ -1,10 +1,13 @@
 from enum import Enum
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from werkzeug.datastructures import FileStorage
 
-from feather_python.errors import UnsupportedContentTypeError
+from feather_python.errors import (
+    IncorrectJSONError,
+    UnsupportedContentTypeError,
+)
 
 
 class RunRequestMode(Enum):
@@ -41,38 +44,30 @@ class RunRequest:
 
         if request.mimetype == "multipart/form-data":
             files = dict(request.files)
-        elif request.mimetype == "application/json" and (
-            raw_files := request.json.get("files")
-        ):
-            files = {
-                filename: create_filestorage(filename, content)
-                for filename, content in raw_files.items()
-            }
+        elif request.mimetype == "application/json":
+            if raw_files := request.json.get("files"):
+                files = {
+                    filename: create_filestorage(filename, content)
+                    for filename, content in raw_files.items()
+                }
+            else:
+                raise IncorrectJSONError()
         elif request.mimetype == "application/x-www-form-urlencoded":
             code = next(iter(request.form.keys()))
-        elif (
-            request.mimetype in {"text/plain", "text/python"}
-            or not request.mimetype
-        ):
+        elif request.mimetype in {"text/plain", "text/python", ""}:
             code = request.data.decode("utf-8")
         else:
             raise UnsupportedContentTypeError()
 
-        args = []
-        if RunRequest.ARGS_HEADER in request.headers:
-            args = cls.get_args_from_header(
-                request.headers[RunRequest.ARGS_HEADER]
-            )
-
-        env = {}
-        if RunRequest.ENV_HEADER in request.headers:
-            env = cls.get_env_from_header(
-                request.headers[RunRequest.ENV_HEADER]
-            )
-
-        entrypoint = None
-        if RunRequest.ENTRYPOINT_HEADER in request.headers:
-            entrypoint = request.headers[RunRequest.ENTRYPOINT_HEADER]
+        args = cls.get_args_from_header(
+            request.headers.get(RunRequest.ARGS_HEADER, "")
+        )
+        env = cls.get_env_from_header(
+            request.headers.get(RunRequest.ENV_HEADER, "")
+        )
+        entrypoint = cls.get_entrypoint_from_header(
+            request.headers.get(RunRequest.ENTRYPOINT_HEADER, "")
+        )
 
         return cls(
             code=code, files=files, args=args, env=env, entrypoint=entrypoint
@@ -87,6 +82,10 @@ class RunRequest:
         return dict(
             assignment.split("=") for assignment in header_value.split(" ")
         )
+
+    @classmethod
+    def get_entrypoint_from_header(cls, header_value: str) -> Union[str, None]:
+        return header_value or None
 
 
 class RunResponse:
