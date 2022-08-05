@@ -81,7 +81,8 @@ class RunRequest:
     def _get_files_from_json(
         request: "flask.Request",
     ) -> Dict[str, FileStorage]:
-        if raw_files := request.json.get("files"):
+        if "files" in request.json:
+            raw_files = request.json["files"]
             files = {
                 str(filename): create_filestorage(filename, content)
                 for filename, content in raw_files.items()
