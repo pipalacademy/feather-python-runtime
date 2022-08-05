@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from werkzeug.datastructures import FileStorage
 
 from feather_python.errors import (
+    CodeNotFoundError,
     IncorrectJSONError,
     UnsupportedContentTypeError,
 )
@@ -35,37 +36,22 @@ class RunRequest:
         self.env = env
 
     @property
-    def mode(self) -> Enum:
+    def mode(self) -> RunRequestMode:
         return RunRequestMode.FILES if self.files else RunRequestMode.CODE
 
     @classmethod
     def from_request(cls, request: "flask.Request") -> "RunRequest":
-        code, files = None, None
-
-        if request.mimetype == "multipart/form-data":
-            files = dict(request.files)
-        elif request.mimetype == "application/json":
-            if raw_files := request.json.get("files"):
-                files = {
-                    filename: create_filestorage(filename, content)
-                    for filename, content in raw_files.items()
-                }
-            else:
-                raise IncorrectJSONError()
-        elif request.mimetype == "application/x-www-form-urlencoded":
-            code = next(iter(request.form.keys()))
-        elif request.mimetype in {"text/plain", "text/python", ""}:
-            code = request.data.decode("utf-8")
-        else:
+        file_getter = cls.get_files_getter(request.mimetype)
+        code_getter = cls.get_code_getter(request.mimetype)
+        if not file_getter and code_getter:
             raise UnsupportedContentTypeError()
 
-        args = cls.get_args_from_header(
-            request.headers.get(RunRequest.ARGS_HEADER, "")
-        )
-        env = cls.get_env_from_header(
-            request.headers.get(RunRequest.ENV_HEADER, "")
-        )
-        entrypoint = cls.get_entrypoint_from_header(
+        files = file_getter and file_getter(request)
+        code = code_getter and code_getter(request)
+
+        args = cls.get_args(request.headers.get(RunRequest.ARGS_HEADER, ""))
+        env = cls.get_env(request.headers.get(RunRequest.ENV_HEADER, ""))
+        entrypoint = cls.get_entrypoint(
             request.headers.get(RunRequest.ENTRYPOINT_HEADER, "")
         )
 
@@ -74,11 +60,11 @@ class RunRequest:
         )
 
     @classmethod
-    def get_args_from_header(cls, header_value: str) -> List[str]:
+    def get_args(cls, header_value: str) -> List[str]:
         return header_value and header_value.split(" ") or []
 
     @classmethod
-    def get_env_from_header(cls, header_value: str) -> Dict[str, str]:
+    def get_env(cls, header_value: str) -> Dict[str, str]:
         assignments = header_value and header_value.split(" ") or []
 
         # env_list: [[key1, val1], [key2, val2], [key3, val3], ...]
@@ -91,8 +77,68 @@ class RunRequest:
         return dict(env_list)
 
     @classmethod
-    def get_entrypoint_from_header(cls, header_value: str) -> Union[str, None]:
+    def get_entrypoint(cls, header_value: str) -> Union[str, None]:
         return header_value or None
+
+    @classmethod
+    def get_files_getter(cls, mimetype: str):
+        getters = {
+            "application/json": cls.get_files_from_json,
+            "multipart/form-data": cls.get_files_from_multipart,
+        }
+        return getters.get(mimetype)
+
+    @classmethod
+    def get_code_getter(cls, mimetype: str):
+        getters = {
+            "application/x-www-form-urlencoded": cls.get_code_from_formdata,
+            "text/plain": cls.get_code_from_plaintext,
+            "text/python": cls.get_code_from_plaintext,
+            "": cls.get_code_from_plaintext,
+        }
+        return getters.get(mimetype)
+
+    @staticmethod
+    def get_files_from_json(
+        request: "flask.Request",
+    ) -> Dict[str, FileStorage]:
+        if raw_files := request.json.get("files"):
+            files = {
+                str(filename): create_filestorage(filename, content)
+                for filename, content in raw_files.items()
+            }
+        else:
+            raise IncorrectJSONError()
+
+        if not files:
+            raise CodeNotFoundError()
+
+        return files
+
+    @staticmethod
+    def get_files_from_multipart(
+        request: "flask.Request",
+    ) -> Dict[str, FileStorage]:
+        files = dict(request.files)
+        if not files:
+            raise CodeNotFoundError()
+
+        return files
+
+    @staticmethod
+    def get_code_from_formdata(request: "flask.Request") -> str:
+        try:
+            return next(iter(request.form.keys()))
+        except StopIteration:
+            raise CodeNotFoundError()
+
+    @staticmethod
+    def get_code_from_plaintext(request: "flask.Request") -> str:
+        code = request.data.decode("utf-8")
+        if not code:
+            raise CodeNotFoundError()
+
+        return code
 
 
 class RunResponse:
