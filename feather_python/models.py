@@ -1,3 +1,4 @@
+import shlex
 from enum import Enum
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Union
@@ -122,11 +123,11 @@ class RunRequest:
 
     @staticmethod
     def _get_args(header_value: str) -> List[str]:
-        return header_value and header_value.split(" ") or []
+        return header_value and shlex.split(header_value) or []
 
     @staticmethod
     def _get_env(header_value: str) -> Dict[str, str]:
-        assignments = header_value and header_value.split(" ") or []
+        assignments = header_value and shlex.split(header_value) or []
 
         # env_list: [[key1, val1], [key2, val2], [key3, val3], ...]
         env_list = [

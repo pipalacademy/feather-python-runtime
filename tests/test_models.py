@@ -1,3 +1,4 @@
+import textwrap
 from flask import request
 
 from io import BytesIO
@@ -115,3 +116,41 @@ def test_get_runrequest_from_flask_request_with_code(app):
         assert run_request.files is None
         assert run_request.mode == RunRequestMode.CODE
         assert run_request.code == code
+
+
+def test_get_runrequest_from_flask_request_with_env(app):
+    headers = {
+        "x-feather-env": 'foo=def bar=\'Hello There\' baz="\\"hello again\\""'
+    }
+    code = textwrap.dedent(
+        """\
+        import os
+
+        print(os.environ)
+    """
+    )
+
+    with app.test_request_context(
+        "/runtimes/python", method="POST", data=code, headers=headers
+    ):
+        run_request = RunRequest.from_request(request)
+
+        assert run_request.env == {
+            "foo": "def",
+            "bar": "Hello There",
+            "baz": '"hello again"',
+        }
+
+
+def test_get_runrequest_from_flask_request_with_args(app):
+    headers = {
+        "x-feather-args": 'foo "bar bar" "\\"baz baz"\\"'
+    }
+    code = """import sys; print(sys.argv)"""
+
+    with app.test_request_context(
+        "/runtimes/python", method="POST", data=code, headers=headers,
+    ):
+        run_request = RunRequest.from_request(request)
+
+        assert run_request.args == ["foo", "bar bar", '"baz baz"']
