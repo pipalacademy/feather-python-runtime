@@ -1,1 +1,1 @@
-gunicorn feather_python.app:app
+web: gunicorn feather_python.app:app
