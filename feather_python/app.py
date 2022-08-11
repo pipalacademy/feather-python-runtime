@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, request
+from flask_cors import CORS
 
 from feather_python.middleware import handle_feather_errors
 from feather_python.models import RunRequest
@@ -13,6 +14,10 @@ PYTHON_EXECUTABLE_PATH = "python3"
 SUBPROCESS_TIMEOUT = 30  # seconds
 
 app = Flask("feather_python")
+CORS(
+    app,
+    allow_headers=["x-feather-args", "x-feather-env", "x-feather-entrypoint"],
+)
 
 
 @app.route("/runtimes/python", methods=["GET", "POST"])

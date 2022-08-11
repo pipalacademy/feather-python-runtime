@@ -143,13 +143,14 @@ def test_get_runrequest_from_flask_request_with_env(app):
 
 
 def test_get_runrequest_from_flask_request_with_args(app):
-    headers = {
-        "x-feather-args": 'foo "bar bar" "\\"baz baz"\\"'
-    }
+    headers = {"x-feather-args": 'foo "bar bar" "\\"baz baz"\\"'}
     code = """import sys; print(sys.argv)"""
 
     with app.test_request_context(
-        "/runtimes/python", method="POST", data=code, headers=headers,
+        "/runtimes/python",
+        method="POST",
+        data=code,
+        headers=headers,
     ):
         run_request = RunRequest.from_request(request)
 
