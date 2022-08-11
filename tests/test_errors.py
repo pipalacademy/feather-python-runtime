@@ -117,3 +117,37 @@ def test_entrypoint_not_found_with_default_entrypoint_and_filename_mismatch(
     assert "error" in response.json
     assert "message" in response.json
     assert response.json["error"] == "Entrypoint not found"
+
+
+def test_invalid_filepath_error_when_filepath_is_relative(client):
+    response = client.post(
+        endpoint,
+        json={
+            "files": {
+                "main.py": "print('hello, world!')",
+                "../foo.py": "this shouldn't be here",
+            }
+        },
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.json
+    assert "message" in response.json
+    assert response.json["error"] == "Invalid filepath"
+
+
+def test_invalid_filepath_error_when_filepath_is_at_root(client):
+    response = client.post(
+        endpoint,
+        json={
+            "files": {
+                "main.py": "print('hello, world!')",
+                "/foo.py": "this shouldn't be here",
+            }
+        },
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.json
+    assert "message" in response.json
+    assert response.json["error"] == "Invalid filepath"

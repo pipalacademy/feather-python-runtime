@@ -3,7 +3,7 @@ import os
 import subprocess
 import tempfile
 
-from feather_python.errors import EntrypointNotFoundError
+from feather_python.errors import EntrypointNotFoundError, InvalidFilepathError
 from feather_python.models import RunRequestMode, RunResponse
 
 
@@ -54,6 +54,10 @@ class PythonRuntime:
             if run_request.mode == RunRequestMode.FILES:
                 for filepath, file in run_request.files.items():
                     final_filepath = os.path.join(tempdir, filepath)
+                    if not is_child(final_filepath, tempdir):
+                        raise InvalidFilepathError
+
+                    create_parent_dirs_if_not_exist(final_filepath)
                     file.save(final_filepath)
             else:
                 filepath = os.path.join(tempdir, entrypoint)
@@ -66,3 +70,14 @@ class PythonRuntime:
         entrypoint_path = os.path.join(tempdir, entrypoint)
         command = [self.python_path, entrypoint_path] + (args or [])
         return command
+
+
+def is_child(child, parent):
+    abs_child = os.path.abspath(child)
+    abs_parent = os.path.abspath(parent)
+
+    return os.path.commonprefix([abs_child, abs_parent]) == abs_parent
+
+
+def create_parent_dirs_if_not_exist(filepath):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)

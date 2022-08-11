@@ -34,6 +34,12 @@ class InvalidFilenameError(BaseFeatherError):
     status_code = 400
 
 
+class InvalidFilepathError(BaseFeatherError):
+    title = "Invalid filepath"
+    message = "Filepath goes outside the expected directory"
+    status_code = 400
+
+
 class UnsupportedContentTypeError(BaseFeatherError):
     title = "Unsupported content type"
     message = (

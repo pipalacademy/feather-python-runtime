@@ -71,6 +71,22 @@ def test_run_with_multiple_files_as_json(client):
     assert response.text == expected_output
 
 
+def test_run_with_multiple_files_that_are_nested(client):
+    fake_data = get_fake_data_with_multiple_files_that_are_nested()
+    files = fake_data.files
+    expected_output = fake_data.expected_output
+
+    data = {
+        filename: (BytesIO(content.encode("utf-8")), filename)
+        for filename, content in files.items()
+    }
+
+    response = client.post(endpoint, data=data)
+
+    assert response.status_code == 200
+    assert response.text == expected_output
+
+
 def test_run_with_multiple_files_that_errors(client):
     fake_data = get_fake_data_with_multiple_files_that_errors()
     files, expected_in_output = fake_data
@@ -148,6 +164,27 @@ def get_fake_data_with_multiple_files():
         "main.py": textwrap.dedent(
             """
         from code import code
+
+        code()
+        """
+        ),
+    }
+    expected_output = "hi from code.py\n"
+
+    return FakeMultipleFilesData(files=files, expected_output=expected_output)
+
+
+def get_fake_data_with_multiple_files_that_are_nested():
+    files = {
+        "foo/code.py": textwrap.dedent(
+            """
+        def code():
+            print("hi from code.py")
+        """
+        ),
+        "main.py": textwrap.dedent(
+            """
+        from foo.code import code
 
         code()
         """
