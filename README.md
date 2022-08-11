@@ -1,6 +1,8 @@
 # Feather Python Runtime
 Python Runtime for Feather (previously WebREPL).
 
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## API endpoints
 
 #### /runtimes/python
